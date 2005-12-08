@@ -1,2 +1,6 @@
+0.02
+  - fixed bug in the distribution, CPAN should now be able to 
+    index HTML::BBReverse.
+
 0.01
   - first version
