@@ -1,7 +1,7 @@
+Build.PL
 Changes
-Makefile.PL
-MANIFEST
+lib/HTML/BBReverse.pm
+MANIFEST			This list of files
+META.yml
 README
 t/basic.t
-lib/HTML/BBReverse.pm
-META.yml                                 Module meta-data (added by MakeMaker)

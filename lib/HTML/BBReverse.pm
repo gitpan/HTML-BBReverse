@@ -5,7 +5,7 @@ package HTML::BBReverse;
 use strict;
 use warnings;
 use vars qw($VERSION);
-$VERSION = "0.02";
+$VERSION = "0.03";
 
 sub new {
   my $self = shift;
@@ -27,6 +27,9 @@ sub new {
 sub parse {
   my $self = shift;
   local $_ = shift;
+
+  $_ =~ s/[\r\n]$//;
+  $_ .= " "; # weird hack to fix bug #16402
  
   my %alwd; 
   foreach my $tag (@{$self->{allowed_tags}}) { $alwd{$tag} = 1 } 
@@ -40,32 +43,32 @@ sub parse {
   } if($alwd{list}) {
     $_ = $self->_list2html($_);
   } if($alwd{b}) {
-    s/\[b\]/<b>/g;
-    s/\[\/b\]/<\/b>/g;
+    s/\[b\]/<b>/ig;
+    s/\[\/b\]/<\/b>/ig;
   } if($alwd{i}) {
-    s/\[i\]/<i>/g;
-    s/\[\/i\]/<\/i>/g;
+    s/\[i\]/<i>/ig;
+    s/\[\/i\]/<\/i>/ig;
   } if($alwd{u}) {
-    s/\[u\]/<span style=\"text-decoration: underline\">/g;
-    s/\[\/u\]/<\/span><!--1-->/g;
+    s/\[u\]/<span style=\"text-decoration: underline\">/ig;
+    s/\[\/u\]/<\/span><!--1-->/ig;
   } if($alwd{img}) {
-    s/\[img\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"\" \/>/g; #"
-    s/\[img=([^"\]]+)\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"$2\" title=\"$2\" \/>/g; #"
+    s/\[img\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"\" \/>/ig; #"
+    s/\[img=([^"\]]+)\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"$2\" title=\"$2\" \/>/ig; #"
   } if($alwd{url}) {
-    s/\[url=([^\]"]+)\]/<a href=\"$1\">/g;  #"
-    s/\[\/url\]/<\/a>/g;
+    s/\[url=([^\]"]+)\]/<a href=\"$1\">/ig;  #"
+    s/\[\/url\]/<\/a>/ig;
   } if($alwd{email}) {
-    s/\[email\]([^"\[]+)\[\/email\]/<a href=\"mailto: $1\">$1<\/a>/g; #"
+    s/\[email\]([^"\[]+)\[\/email\]/<a href=\"mailto: $1\">$1<\/a>/ig; #"
   } if($alwd{size}) {
-    s/\[size=([0-9]{1,2})\]/<span style=\"font-size: $1px\">/g;
-    s/\[\/size\]/<\/span><!--2-->/g;
+    s/\[size=([0-9]{1,2})\]/<span style=\"font-size: $1px\">/ig;
+    s/\[\/size\]/<\/span><!--2-->/ig;
   } if($alwd{color}) {
-    s/\[color=([^"\]\s]+)\]/<span style=\"color: $1\">/g;  #"
-    s/\[\/color\]/<\/span><!--3-->/g;
+    s/\[color=([^"\]\s]+)\]/<span style=\"color: $1\">/ig;  #"
+    s/\[\/color\]/<\/span><!--3-->/ig;
   } if($alwd{quote}) {
-    s/\[quote\]/<span class=\"bbcode_quote_header\">Quote: <span class=\"bbcode_quote_body\">/g;
-    s/\[quote=([^<\]]+)\]/<span class=\"bbcode_quote_header\">$1 wrote: <span class=\"bbcode_quote_body\">/g;
-    s/\[\/quote\]/<\/span><\/span>/g;
+    s/\[quote\]/<span class=\"bbcode_quote_header\">Quote: <span class=\"bbcode_quote_body\">/ig;
+    s/\[quote=([^<\]]+)\]/<span class=\"bbcode_quote_header\">$1 wrote: <span class=\"bbcode_quote_body\">/ig;
+    s/\[\/quote\]/<\/span><\/span>/ig;
   }
   s/\&#91\;/[/g;
   s/\&#93\;/]/g;
@@ -76,7 +79,7 @@ sub parse {
 sub reverse {
   my $self = shift;
   local $_ = shift;
- 
+
   my %alwd; 
   foreach my $tag (@{$self->{allowed_tags}}) { $alwd{$tag} = 1 } 
   
@@ -130,11 +133,11 @@ sub _code2html {
   my $return = ""; my $first = 0;
   foreach my $line (split(/\[/, $str)) {
     $line = "[$line" if $first; $first = 1;
-    if(!$incode && $line =~ s/^\[code\]//) {
+    if(!$incode && $line =~ s/^\[code\]//i) {
       $return .= "<span class=\"bbcode_code_header\">Code: <span class=\"bbcode_code_body\">";
       $incode = 1;
     }
-    if($incode && $line =~ s/^\[\/code\]//) {
+    if($incode && $line =~ s/^\[\/code\]//i) {
       $return .= "</span> </span>";
       $incode = 0;
     }
@@ -179,7 +182,7 @@ sub _list2html {
   my $m1; my $m2; my $item; my @items;
   foreach my $line (split(/\r?\n/, $str)) {
     $line .= "\n";
-    if($line =~ s/^(.*)\[list(=a|=1)?\]//) {
+    if($line =~ s/^(.*)\[list(=a|=1)?\]//i) {
       $m1 = $1; $m2 = $2;
       if($inlist) {
         @items = split(/\[\*\]/, $m1);
@@ -196,7 +199,7 @@ sub _list2html {
       $return .= "\n";
       $inlist++;
     }
-    if($inlist && $line =~ s/^(.*)\[\/list\]//) {
+    if($inlist && $line =~ s/^(.*)\[\/list\]//i) {
       @items = split(/\[\*\]/, $1);
       foreach $item (0..$#items) {
         $return .= $items[$item] if !$item && $inlist == $liststart;
@@ -293,6 +296,17 @@ HTML::BBReverse - Perl module to convert HTML to BBCode and back
 C<HTML::BBReverse> is a pure perl module for converting BBCode to HTML and is
 able to convert the generated HTML back to BBCode.
 
+And why would you want to reverse the generated HTML? Well, when you have a
+nice dynamic website where you and/or visitors can post messages, and in
+those messages BBCode is used for markup. In normal cases, your website has
+a lot more pageviews than edits, and saving all those messages as HTML will
+be a lot faster than saving them as the original BBCode and parsing them to
+HTML for every visit.
+
+So now all BBCode gets converted to HTML before it will be saved, but what
+if you want to edit a message? Just reverse the generated HTML back to
+BBCode, edit your message, and save it as HTML again.
+
 =head2 METHODS
 
 The following methods can be used
@@ -300,7 +314,9 @@ The following methods can be used
 =head3 new
 
   my $bbr = HTML::BBReverse->new(
-    allowed_tags => [ qw( b i u code url size color img quote list email ) ],
+    allowed_tags => [
+      qw( b i u code url size color img quote list email )
+    ],
     reverse_for_edit => 1,
     in_paragraph => 0,
   );
@@ -325,13 +341,14 @@ supported tags.
 When set to a positive value, the C<reverse> method will parse C<&>, C<E<gt>> and
 C<E<lt>> to their HTML entity equivalent. This option is useful when reversing
 HTML to BBCode for editing in a browser, in a normal C<textarea>. When set to
-zero, the C<reverse> method should just ignore these characters.
+zero, the C<reverse> method should just ignore these characters. Defaults to 1.
 
 =item in_paragraph
 
 Specifies wether the generated HTML is used between HTML paragraphs (C<E<lt>pE<gt>>
-and C<E<lt>/pE<gt>>), and adds a C<E<lt>/pE<gt>> in front of and a C<E<lt>pE<gt>> after every
-list. (XHTML 1.0 strict document types do not allow lists in paragraphs)
+and C<E<lt>/pE<gt>>), and adds a C<E<lt>/pE<gt>> in front of and a C<E<lt>pE<gt>>
+after every list. (XHTML 1.0 strict document types do not allow lists in
+paragraphs) Defaults to 0.
 
 =back
 
@@ -352,24 +369,35 @@ BBCode>
 
 The following BBCode tags are supported:
 
-  b, i, u, img, url, size, color, quote, list, email
+  b, i, u, img, url, size, color,
+  quote, list, email, code
 
 Which will generate the following HTML:
 
-  Input                              Output
-  
-  [b]bold[/b]                        <b>bold</b>
-  [i]italic[/i]                      <i>italic</i>
-  [u]underlined[/u]                  <span style="text-decoration: underline">underlined</span><!--1-->
-  [img]pic.png[/img]                 <img src="pic.png" alt="" />
-  [img=pic.png]desc[/img]            <img src="pic.png" alt="desc" title="desc" />
-  [url=/file]desc[/url]              <a href="/file">desc</a>
-  [size=20]text[/size]               <span style="font-size: 20px">text</span><!--2-->
-  [color=red]text[/color]            <span style="color: red">text</span><!--3-->
-  [quote]some quote[/quote]          <span class="bbcode_quote_header">Quote: <span class="bbcode_quote_body">some quote</span></span>
-  [quote=author]some quote[/quote]   <span class="bbcode_quote_header">author wrote: <span class="bbcode_quote_body">some quote</span></span>
-  [code]some code[/code]             <span class="bbcode_code_header">Code: <span class="bbcode_code_body">some code</span> </span>
-  [email]some@mail.addr[/email]      <a href="mailto:some@mail.addr">some@mail.addr</a>
+  [b]bold[/b]
+    <b>bold</b>
+  [i]italic[/i]
+    <i>italic</i>
+  [u]underlined[/u]
+    <span style="text-decoration: underline">underlined</span><!--1-->
+  [img]pic.png[/img]
+    <img src="pic.png" alt="" />
+  [img=pic.png]desc[/img]
+    <img src="pic.png" alt="desc" title="desc" />
+  [url=/file]desc[/url]
+    <a href="/file">desc</a>
+  [size=20]text[/size]
+    <span style="font-size: 20px">text</span><!--2-->
+  [color=red]text[/color]
+    <span style="color: red">text</span><!--3-->
+  [quote]some quote[/quote]
+    <span class="bbcode_quote_header">Quote: <span class="bbcode_quote_body">some quote</span></span>
+  [quote=author]some quote[/quote]
+    <span class="bbcode_quote_header">author wrote: <span class="bbcode_quote_body">some quote</span></span>
+  [code]some code[/code]
+    <span class="bbcode_code_header">Code: <span class="bbcode_code_body">some code</span> </span>
+  [email]some@mail.addr[/email]
+    <a href="mailto:some@mail.addr">some@mail.addr</a>
 
 Note the C<E<lt>!--x--E<gt>> after some HTML close tags, these are used by the
 C<reverse> method, to see the difference between HTML close tags which are the
@@ -378,9 +406,43 @@ same, while the BBCode equivalent is not the same.
 
 =head1 SEE ALSO
 
-http://www.phpbb.com/phpBB/faq.php?mode=bbcode
+L<http://dev.yorhel.nl/HTML-BBReverse/>,
+L<http://www.phpbb.com/phpBB/faq.php?mode=bbcode>,
+L<HTML::BBCode|HTML::BBCode>, L<BBCode::Parser|BBCode::Parser>
 
-=head1 KNOWN BUGS
+=head1 CAVEATS
+
+=head2 Laziness
+
+HTML::BBReverse is a lazy module, which simply means it does not check any
+syntax, and just converts any BBCode to HTML (or back), even when the input
+contains errors like wrong nested tags or even close tags without start
+tags or start tags without close tags. Therefore, wrong input means
+wrong output. Note though that reversing HTML which is generated with
+C<parse> with 'wrong' BBCode as input, should still give the same 'wrong'
+BBCode as output.
+
+=head2 Lists formatting
+
+The space between a code start tag (C<[code]>) and the first item (C<[*]>)
+will be completely ignored, and replaced with a linebreak. For example:
+When you C<parse>
+
+  [list]some
+  text or [b]bbcode[/b]
+  here[*]item[/list]
+
+to HTML, and C<reverse> it back to BBCode, it will give the following
+output:
+
+  [list]
+  [*]item[/list]
+
+This 'feature' (some might call it a bug) is added because it is not allowed
+to have content between C<E<lt>ulE<gt>> and the first C<E<lt>liE<gt>> in
+(X)HTML.
+
+=head1 BUGS
 
 This module does contain a few bugs, if you find another bug not listed here,
 please contact the author.
@@ -402,15 +464,47 @@ Note that the generated HTML will still be reversed to the original BBCode.
 The best solution to this bug is just to add a linebreak after every list tag, 
 this bug will probably be fixed in future versions of HTML::BBReverse.
 
-=head2 Lists formatting
+=head1 TODO
 
-The space between a code start tag (C<[code]>) and the first item (C<[*]>)
-will be completely ignored, and replaced with a linebreak.
-B<This bug will probably not be fixed.>
+HTML::BBReverse is still in development, and new functions will probably be
+added.
+
+=over 4
+
+=item html-tag
+
+A BBCode tag which allows people to insert raw HTML between [html] and
+[/html] tags.
+
+=item Syntax checking
+
+An extra method which checks the syntax of BBCode and maybe the generated
+HTML, and an option to C<new> where you can configure wether the syntax
+should be checked before a C<parse> of C<reverse>, and what to do if there
+is a syntax error.
+
+=back
+
+And of course HTML::BBReverse needs a little more testing and bugfixes
+before it will be considered as stable.
 
 =head1 AUTHOR
 
 Y. Heling, E<lt>yorhel@cpan.orgE<gt>
+
+=head1 CREDITS
+
+I would like to thank the following people:
+
+=over 4
+
+=item * Thijs Wijnmaalen for helping to refine the idea
+
+=item * M. Blom for pointing out some bugs
+
+=item * Elsbeth Dokter for giving mental support
+
+=back
 
 =head1 COPYRIGHT AND LICENSE
 

@@ -1,5 +1,5 @@
-HTML-BBReverse 0.1
-==================
+HTML-BBReverse 0.03
+===================
 
 HTML::BBReverse is a pure perl module for converting BBCode to HTML
 and is able to convert the generated HTML back to BBCode.
@@ -8,10 +8,10 @@ INSTALLATION
 
 To install this module type the following:
 
-   perl Makefile.PL
-   make
-   make test
-   make install
+   perl Build.pl
+   ./Build
+   ./Build test
+   ./Build install
 
 DEPENDENCIES
 

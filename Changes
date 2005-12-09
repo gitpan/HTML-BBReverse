@@ -1,6 +1,11 @@
+0.03
+  - fixed documentation
+  - changed to Module::Build for the installation process
+  - fixed bugs #16402 and #16403 reported by M. Blom
+
 0.02
   - fixed bug in the distribution, CPAN should now be able to 
-    index HTML::BBReverse.
+     index HTML::BBReverse.
 
 0.01
   - first version
