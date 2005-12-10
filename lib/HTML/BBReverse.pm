@@ -5,7 +5,7 @@ package HTML::BBReverse;
 use strict;
 use warnings;
 use vars qw($VERSION);
-$VERSION = "0.03";
+$VERSION = "0.04";
 
 sub new {
   my $self = shift;

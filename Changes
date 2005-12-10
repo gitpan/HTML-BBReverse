@@ -1,3 +1,7 @@
+0.04
+  - added compatibility with Makefile.PL, the CPAN shell didn't
+     like the Build.PL
+
 0.03
   - fixed documentation
   - changed to Module::Build for the installation process
