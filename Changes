@@ -1,15 +1,26 @@
-0.04
+0.05 - 2006-01-22
+  - fixed a bug with extra newlines at the end of the string
+  - fixed a bug with multiple list-tags at the same line, this
+     should now work without problems
+  - added [html]-tag
+  - rewrote and combined the parsing and reversing code for
+     the [code], [list] and [html] tags, this should speed up
+     some things :)
+  - small code cleanup
+  - documented the supported BBCode
+
+0.04 - 2005-11-10
   - added compatibility with Makefile.PL, the CPAN shell didn't
      like the Build.PL
 
-0.03
+0.03 - 2005-11-09
   - fixed documentation
   - changed to Module::Build for the installation process
   - fixed bugs #16402 and #16403 reported by M. Blom
 
-0.02
+0.02 - 2005-11-08
   - fixed bug in the distribution, CPAN should now be able to 
      index HTML::BBReverse.
 
-0.01
+0.01 - 2005-11-07
   - first version

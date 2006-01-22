@@ -1,6 +1,6 @@
 #########################
 
-use Test::More tests => 44;
+use Test::More tests => 48;
 BEGIN { use_ok 'HTML::BBReverse'; }
 
 #########################
@@ -27,8 +27,9 @@ my @tests = (
  [ '[quote]some quote[/quote]', '<span class="bbcode_quote_header">Quote: <span class="bbcode_quote_body">some quote</span></span>', '[quote]some quote[/quote]', 'quote1' ],
  [ '[quote=author]some quote[/quote]', '<span class="bbcode_quote_header">author wrote: <span class="bbcode_quote_body">some quote</span></span>', '[quote=author]some quote[/quote]', 'quote2' ],
  [ '[code]some code[/code]', '<span class="bbcode_code_header">Code: <span class="bbcode_code_body">some code</span> </span>', '[code]some code[/code]', 'code' ],
- [ "\n", "", "", 'linebreak1' ],
- [ "\n \n", "<br />\n ", "\n ", 'linebreak2' ],
+ [ '[list][*]item[/list]', "<ul>\n<li>item</li></ul>", "[list]\n[*]item[/list]", 'list' ],
+ [ "\n", "<br />\n", "\n", 'linebreak1' ],
+ [ "\n \n", "<br />\n <br />\n", "\n \n", 'linebreak2' ],
 
 ## combinations and tricks
  [ '[code]some code[/code][code]more [code][/code]', '<span class="bbcode_code_header">Code: <span class="bbcode_code_body">some code</span> </span><span class="bbcode_code_header">Code: <span class="bbcode_code_body">more [code]</span> </span>', '[code]some code[/code][code]more [code][/code]', 'comp-code' ],
@@ -41,12 +42,14 @@ my @tests = (
  [ 'some text[', 'some text[', 'some text[', 'bug-16402-1' ],
  [ '[b]bold[/b][', '<b>bold</b>[', '[b]bold[/b][', 'bug-16402-2' ],
  #16403
- [ '[B]no bold[/B][b]bold[/b][b]no bold[/B]', '<b>no bold</b><b>bold</b><b>no bold</b>', '[b]no bold[/b][b]bold[/b][b]no bold[/b]', 'bug-16403' ] 
+ [ '[B]no bold[/B][b]bold[/b][b]no bold[/B]', '<b>no bold</b><b>bold</b><b>no bold</b>', '[b]no bold[/b][b]bold[/b][b]no bold[/b]', 'bug-16403' ],
+ # multiple list-tags on one line
+ [ '[list][*]item[/list][list][*]item2[/list]', "<ul>\n<li>item</li></ul><ul>\n<li>item2</li></ul>", "[list]\n[*]item[/list][list]\n[*]item2[/list]", 'bug-lists' ],
 );
 
 foreach my $i (0..$#tests) {
   my $html = $bbr->parse($tests[$i][0]);
-  my $extra = " \n";
+  my $extra = "";
   is($html, "$tests[$i][1]$extra", "$tests[$i][3]-parse");
   is($bbr->reverse($html), "$tests[$i][2]$extra", "$tests[$i][3]-reverse");
 }
