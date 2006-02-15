@@ -5,7 +5,7 @@ package HTML::BBReverse;
 use strict;
 use warnings;
 use vars qw($VERSION);
-$VERSION = "0.05";
+$VERSION = "0.06";
 
 sub new {
   my $self = shift;
@@ -17,6 +17,7 @@ sub new {
     allowed_tags => [ qw( b i u code url size color img quote list email html ) ],
     reverse_for_edit => 1,
     in_paragraph => 0,
+    no_jslink => 1,
   );
   return bless { %options, %args}, $class;
 }
@@ -45,10 +46,10 @@ sub parse {
     s/\[u\]/<span style=\"text-decoration: underline\">/ig;
     s/\[\/u\]/<\/span><!--1-->/ig;
   } if($alwd{img}) {
-    s/\[img\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"\" \/>/ig; #"
-    s/\[img=([^"\]]+)\]([^"\[]+)\[\/img\]/<img src=\"$1\" alt=\"$2\" title=\"$2\" \/>/ig; #"
+    s/\[img\]([^"\[]+)\[\/img\]/"<img src=\"" . $self->_fix_jslink($1) . "\" alt=\"\" \/>"/eig; #"
+    s/\[img=([^"\]]+)\]([^"\[]+)\[\/img\]/"<img src=\"" . $self->_fix_jslink($1) . "\" alt=\"$2\" title=\"$2\" \/>"/eig; #"
   } if($alwd{url}) {
-    s/\[url=([^\]"]+)\]/<a href=\"$1\">/ig;  #"
+    s/\[url=([^\]"]+)\]/"<a href=\"" . $self->_fix_jslink($1) . "\">"/ieg; 
     s/\[\/url\]/<\/a>/ig;
   } if($alwd{email}) {
     s/\[email\]([^"\[]+)\[\/email\]/<a href=\"mailto: $1\">$1<\/a>/ig; #"
@@ -67,8 +68,13 @@ sub parse {
   s/\&#93\;/]/g;
 #  s/\r?\n$//;
 #  s/\s$//;
-  
   return $_;
+}
+sub _fix_jslink {
+  my $self = shift;
+  my $lnk = shift;
+  $lnk =~ s/^[\s\t]*javascript://g if $self->{no_jslink};
+  return $lnk;
 }
 
 sub reverse {
@@ -113,8 +119,6 @@ sub reverse {
     s/\&lt\;/</g;
     s/\&amp\;/\&/g;
   }
-#  s/\r?\n$//;
-#  s/\s$//;
   
   return $_;
 }
@@ -132,16 +136,22 @@ sub _bb2html {
   my $inlist = 0; my $liststart = 0;
   while($str =~ /\[(\/?)(code|list|html|\*)=?([^\]])*\](.*)$/ims) {
     $str = $4;
-    my($be4, $end, $tag, $opt) = ($`, ($1 eq '/' ? 1 : 0), $2, $3);
+    my($be4, $end, $tag, $opt, $done, $app) = ($`, ($1 eq '/' ? 1 : 0), $2, $3, 0, 0);
    # Parse the stuff before the tag... (if any)
     if($be4 && $incode) {
-      $be4 .= _appendtag($end, $tag, $opt) unless lc($tag) eq 'code' && $end;
+      if(lc($tag) ne 'code' && !$end) {
+        $be4 .= _appendtag($end, $tag, $opt);
+        $app++;
+      }
       $be4 =~ s/\[/\&#91\;/g;
       $be4 =~ s/\]/\&#93\;/g;
     } elsif($be4 && $inlist && $inlist != $liststart) {
       $be4 = '';
     } elsif($be4 && $inhtml) {
-      $be4 .= _appendtag($end, $tag, $opt) unless lc($tag) eq 'html' && $end;
+      if(lc($tag) ne 'html' && !$end) {
+        $be4 .= _appendtag($end, $tag, $opt);
+        $app++;
+      }
       $be4 =~ s/<br \/>\r?\n/\n/g;
       $be4 =~ s/\&gt\;/>/g;
       $be4 =~ s/\&lt\;/</g;
@@ -155,9 +165,11 @@ sub _bb2html {
       if(!$incode && lc($tag) eq 'code' && !$end) {
         $return .= "<span class=\"bbcode_code_header\">Code: <span class=\"bbcode_code_body\">";
         $incode = 1;
+        $done++;
       } elsif($incode && lc($tag) eq 'code' && $end) {
         $return .= "</span> </span>";
         $incode = 0;
+        $done++;
       }
     }
    # The [list] and [*]-tags
@@ -169,14 +181,17 @@ sub _bb2html {
         $return .= '<ul style="list-style-type: lower-roman">' if $opt && lc($opt) eq 'a';
         $return .= "\n";
         $inlist++;
+        $done++;
       } elsif(lc($tag) eq 'list' && $end) {
         $return .= '</li></ul>';
         $return .= '<p>' if $inlist == 1 && $self->{in_paragraph};
         $liststart = --$inlist;
+        $done++;
       } elsif(lc($tag) eq '*') {
         $return .= '</li>' if $liststart == $inlist;
         $return .= '<li>';
         $liststart = $inlist;
+        $done++;
       }
     }
    # The [html]-tag
@@ -184,11 +199,15 @@ sub _bb2html {
       if(!$inhtml && lc($tag) eq 'html' && !$end) {
         $return .= "<!--BB-html-->";
         $inhtml = 1;
+        $done++;
       } elsif($inhtml && lc($tag) eq 'html' && $end) {
         $return .= "<!--/BB-html-->";
         $inhtml = 0;
+        $done++;
       }
     }
+   # When nothing is done with the tag, just add it... (fixes bug added in 0.05)
+    $return .= _appendtag($end, $tag, $opt) if !$done && !$app;
   }
   return $return . $str;
 }
@@ -216,7 +235,7 @@ sub _html2bb {
     |<!--BB-html-->|<!--\/BB-html-->)(.*)$/xms)
   {
     $str = $2;
-    my($be4, $code) = ($`, $1);
+    my($be4, $code, $done) = ($`, $1, 0);
    # Parse the stuff before the tag... (if any)
     if($be4 && $inhtml) {
       $be4 .= $code if $code ne '<!--/BB-html-->';
@@ -230,9 +249,11 @@ sub _html2bb {
       if(!$incode && $code eq '<span class="bbcode_code_header">Code: <span class="bbcode_code_body">') {
         $return .= '[code]';
         $incode = 1;
+        $done++;
       } elsif($incode && $code eq '</span> </span>') {
         $return .= '[/code]';
         $incode = 0;
+        $done++;
       }
     }
    # The list-tags
@@ -242,11 +263,14 @@ sub _html2bb {
         $return .= '[list=1]' if $code eq '<ul style="list-style-type: decimal">';
         $return .= '[list=a]' if $code eq '<ul style="list-style-type: lower-roman">';
         $inlist++;
+        $done++;
       } elsif($code eq '</ul>') {
         $return .= '[/list]';
         $inlist--;
+        $done++;
       } elsif($code eq '<li>') {
         $return .= '[*]';
+        $done++;
       }
     }
    # The html-tag
@@ -254,11 +278,14 @@ sub _html2bb {
       if(!$inhtml && $code eq '<!--BB-html-->') {
         $return .= '[html]';
         $inhtml = 1;
+        $done++;
       } elsif($inhtml && $code eq '<!--/BB-html-->') {
         $return .= '[/html]';
         $inhtml = 0;
+        $done++;
       }
     }
+    $return .= $code if !$done && $code ne '<!--/BB-html-->';
   }
   return $return . $str;
 }
@@ -273,8 +300,8 @@ HTML::BBReverse - Perl module to convert HTML to BBCode and back
 
 =head1 VERSION
 
-This document describes version 0.05 of HTML::BBReverse, released 22
-January 2006.
+This document describes version 0.06 of HTML::BBReverse, released
+2006-02-15.
 
 This module is still beta, but should work as expected.
 
@@ -317,6 +344,7 @@ The following methods can be used
     ],
     reverse_for_edit => 1,
     in_paragraph => 0,
+    no_jslink => 1,
   );
 
 C<new> creates a new HTML::BBReverse object using the configuration passed to
@@ -347,6 +375,11 @@ Specifies wether the generated HTML is used between HTML paragraphs (C<E<lt>pE<g
 and C<E<lt>/pE<gt>>), and adds a C<E<lt>/pE<gt>> in front of and a C<E<lt>pE<gt>>
 after every list. (XHTML 1.0 strict document types do not allow lists in
 paragraphs) Defaults to 0.
+
+=item no_jslink
+
+When true, URLs starting with C<javascript:> will be disabled for the C<[url]>
+and C<[img]> tags. Enabled by default.
 
 =back
 
@@ -637,7 +670,7 @@ I would like to thank the following people:
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2005 by Y. Heling
+Copyright (C) 2005-2006 by Y. Heling
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

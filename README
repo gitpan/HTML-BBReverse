@@ -1,4 +1,4 @@
-HTML-BBReverse 0.05
+HTML-BBReverse 0.06
 ===================
 
 HTML::BBReverse is a pure perl module for converting BBCode to
@@ -29,6 +29,6 @@ DEPENDENCIES
 
 COPYRIGHT AND LICENCE
 
- Copyright (C) 2005 by Y. Heling
+ Copyright (C) 2005-2006 by Y. Heling
  This library is free software; you can redistribute it
  and/or modify it under the same terms as Perl itself.

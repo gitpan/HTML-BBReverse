@@ -1,12 +1,12 @@
 ---
 name: HTML-BBReverse
-version: 0.05
+version: 0.06
 author:
-  - 'Y. Heling, E<lt>yorhel@cpan.orgE<gt>, (L<http://www.yorhel.nl/>)'
+  - Yoran Heling <yorhel@cpan.org>
 abstract: Perl module to convert HTML to BBCode and back
 license: perl
 provides:
   HTML::BBReverse:
     file: lib/HTML/BBReverse.pm
-    version: 0.05
+    version: 0.06
 generated_by: Module::Build version 0.2611

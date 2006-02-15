@@ -1,6 +1,6 @@
 #########################
 
-use Test::More tests => 48;
+use Test::More tests => 50;
 BEGIN { use_ok 'HTML::BBReverse'; }
 
 #########################
@@ -45,6 +45,8 @@ my @tests = (
  [ '[B]no bold[/B][b]bold[/b][b]no bold[/B]', '<b>no bold</b><b>bold</b><b>no bold</b>', '[b]no bold[/b][b]bold[/b][b]no bold[/b]', 'bug-16403' ],
  # multiple list-tags on one line
  [ '[list][*]item[/list][list][*]item2[/list]', "<ul>\n<li>item</li></ul><ul>\n<li>item2</li></ul>", "[list]\n[*]item[/list][list]\n[*]item2[/list]", 'bug-lists' ],
+ # XSS bug
+ [ '[url=javascript:alert()]test[/url]', '<a href="alert()">test</a>', '[url=alert()]test[/url]', 'bug-xss' ],
 );
 
 foreach my $i (0..$#tests) {

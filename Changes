@@ -1,3 +1,9 @@
+0.06 - 2006-02-15
+  - fixed a bug with (incorrectly) removing tags when they are
+     not allowed. This bug was added in 0.05.
+  - fixed XSS bug and added no_jslink option. Thanks to Alex
+     for reporting and M. Blom for notifiying me.
+
 0.05 - 2006-01-22
   - fixed a bug with extra newlines at the end of the string
   - fixed a bug with multiple list-tags at the same line, this
