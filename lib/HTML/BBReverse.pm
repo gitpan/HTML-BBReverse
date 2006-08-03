@@ -1,11 +1,9 @@
-#!/bin/perl
-
 package HTML::BBReverse;
 
 use strict;
 use warnings;
 use vars qw($VERSION);
-$VERSION = "0.06";
+$VERSION = "0.07";
 
 sub new {
   my $self = shift;
@@ -27,6 +25,7 @@ sub parse {
   my $self = shift;
   local $_ = shift;
 
+  (return '') if !$_;
   my %alwd; 
   foreach my $tag (@{$self->{allowed_tags}}) { $alwd{$tag} = 1 } 
   
@@ -81,7 +80,8 @@ sub reverse {
   my $self = shift;
   local $_ = shift;
 
-  my %alwd; 
+  (return '') if !$_;
+  my %alwd;
   foreach my $tag (@{$self->{allowed_tags}}) { $alwd{$tag} = 1 } 
 
   $_ = $self->_html2bb($_, $alwd{code}, $alwd{list}, $alwd{html}) if $alwd{code} || $alwd{list} || $alwd{html};
@@ -660,11 +660,9 @@ I would like to thank the following people:
 
 =over 4
 
-=item * Thijs Wijnmaalen (L<http://thijs.wijnmaalen.nl/>) for helping to refine the idea
+=item * Thijs Wijnmaalen (L<http://thijs.wijnmaalen.name/>) for helping to refine the idea
 
 =item * M. Blom for pointing out some bugs
-
-=item * Elsbeth Dokter for giving mental support
 
 =back
 

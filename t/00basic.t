@@ -1,6 +1,6 @@
 #########################
 
-use Test::More tests => 50;
+use Test::More tests => 52;
 BEGIN { use_ok 'HTML::BBReverse'; }
 
 #########################
@@ -47,6 +47,8 @@ my @tests = (
  [ '[list][*]item[/list][list][*]item2[/list]', "<ul>\n<li>item</li></ul><ul>\n<li>item2</li></ul>", "[list]\n[*]item[/list][list]\n[*]item2[/list]", 'bug-lists' ],
  # XSS bug
  [ '[url=javascript:alert()]test[/url]', '<a href="alert()">test</a>', '[url=alert()]test[/url]', 'bug-xss' ],
+ # another useless bug
+ [ '', '', '', 'bug-empty' ],
 );
 
 foreach my $i (0..$#tests) {
